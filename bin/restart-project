@@ -1,0 +1,30 @@
+#!/usr/bin/env python3
+
+import sys
+import subprocess
+
+
+def main(project_name):
+    instance_name = 'hs_' + project_name
+    image_name = 'hakierspejs/' + project_name
+    domain_name =  project_name + '.hs-ldz.pl'
+    subprocess.call(['docker', 'rm', '-f', instance_name])
+    subprocess.call([
+        'docker', 'run',
+        '-d',
+        '--label', 'traefik.http.routers.' + project_name + '.rule=Host(`' + domain_name + '`)',
+        '--label', 'traefik.http.routers.' + project_name + '.entrypoints=web',
+        '--label', 'traefik.http.routers.' + project_name + '-https.rule=Host(`' + domain_name + '`)',
+        '--label', 'traefik.http.routers.' + project_name + '-https.entrypoints=websecure',
+        '--label', 'traefik.http.routers.' + project_name + '-https.tls.certresolver=myresolver',
+        '-e', 'VIRTUAL_HOST=' + domain_name,
+        '-e', 'LETSENCRYPT_HOST=' + domain_name,
+        '--restart=unless-stopped',
+        '--name', instance_name,
+        image_name
+    ])
+
+
+if __name__ == '__main__':
+    project_name = sys.argv[1]
+    main(project_name)
